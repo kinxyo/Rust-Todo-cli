@@ -5,6 +5,7 @@
 
 A feature-full Rust-based Todo app that installs and runs on cli because I just want to write my own state management system from scratch.
 
+![image](https://github.com/kinxyo/Rust-Todo-cli/assets/90744941/e8a9b0ca-2059-4315-b510-7c939620df13)
 
 ## TODO
 
@@ -13,3 +14,5 @@ A feature-full Rust-based Todo app that installs and runs on cli because I just 
 - [ ] Delete a Task
 - [ ] Error Handling for all cases
 - [ ] Persistance of state, meaning saving it to a file or a database.
+
+------------
