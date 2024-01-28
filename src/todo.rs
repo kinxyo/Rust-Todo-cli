@@ -1,173 +1,186 @@
-use std::io::Write;
+/* IMPORTS  */
+use serde::{Deserialize, Serialize};
+use crate::functions::{log_error, clear_terminal, get_input, time_out, QUESTION};
+use std::io::{Write, Read};
+use serde_json::{to_string_pretty, from_str};
+use std::option::Option::Some;
 
+
+/* STRUCTS */
 pub struct State(Vec<User>);
 
-
-impl State {
-    fn initialize() -> Self {
-        Self(Vec::new())
-    }
-
-    fn push_it(&mut self, x: User) {
-        self.0.push(x);
-    }
-}
-
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct User {
     name: String,
-    list: Vec<todo>,
+    todo_count: u8,
+    todo: Option<Vec<Task>>,
 }
 
-#[derive(Debug)]
-#[allow(non_camel_case_types)]
-struct todo {
-    sno: u8,
-    task: String,
+#[derive(Serialize, Deserialize, Debug)]
+#[allow(dead_code)]
+struct Task {
+    title: String,
     status: bool,
 }
 
-impl todo {
-    fn create(state: &State, owner: &str) -> Self {
-        let mut todo = String::new();
-        print!("Task:\n?\t");
-        std::io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut todo).unwrap();
+/* `IMPL` */
+impl State {
 
-        let mut count_max: u8 = 0;
-        let mut newuser = true;
+    /* 
+        DO NOTE: 
+            
+            1. `server.0` | `self.0` | `state.0` refers to the tuple of tuple struct.
 
-        for i in &state.0 {
-            if i.name == owner.to_owned() {
-                newuser = false;
-                for j in &i.list {
-                    if count_max < j.sno {
-                        count_max = j.sno
-                    }
-                }
-            } 
-        }
-        count_max += 1;
+            2.  so essentially,
+                 `self.0` = `Vec<User>` (is refering to the vector of user associated data).
+    
+    */ 
+
+    fn initialize() -> Self {
+        Self(Vec::new())  //Instance created!
+    }
+
+    fn create_newuser(&mut self, user: User) {
+
 
         
-        print!("list created!:\nEntry ~ {count_max}.{todo}");
-        if newuser == true { println!("\t[info: new user detected!]"); }
-        println!();
-        Self { sno: count_max, task: todo.trim().to_string(), status: false }
-
+        self.0.push(user)
     }
 
-    fn get_status(&self) -> bool {
-        self.status
-    }
+    fn post_task(&mut self, username: &str, task: Task) {
 
-    fn toggling_status(&mut self) { 
-        if self.status == false {
-            self.status = true;
-        } else if self.status == true {
-            self.status = false;
+        if let Some(user) = self.0.iter_mut().find(|user| user.name == username) {
+
+            if let Some(todo) = &mut user.todo {
+
+                todo.push(task);
+            
+            } else {
+                
+                // Handle the case where user.todo is None, e.g. by creating a new todo list
+                user.todo = Some(vec![task]);
+            }
+
+            user.todo_count += 1;
         }
+
     }
+
+    pub fn load_state(&mut self) { 
+
+        // let status: bool;
+
+        // fetching `state` from local file.
+        let file = std::fs::File::open("db.json");
+        match file {
+            Ok(mut file) => {
+                
+                // loading the state        
+                let mut data = String::new();
+                
+                match file.read_to_string(&mut data) {
+                    Ok(_) => (),
+                    Err(e) => log_error(&e, Some("Failed to read from db.json")),
+                }
+                
+                match from_str(&data) {
+                    Ok(val) => {
+                        self.0 = val;
+                    },
+                    Err(e) => log_error(&e, Some("Failed to deserialize the data")),
+                }
+            },
+            Err(e) => log_error(&e, Some("Failed to open the file")),
+        }
+    
+    }
+    
 
 }
+
+/* `State` performs all the actions as it's its instance that's holding everything */
+/* `User` is merely just an abraction layer */
+
 
 impl User {
-    pub fn start() -> State { //creating a global instance
-        State::initialize()
+    pub fn start() -> State {
+        State::initialize() // Creating a `Global` instance of `State`.
+        // let server = &mut State::initialize(); // Creating a `Global` instance of `State`.
+        // server.load_state();
     }
 
-    pub fn post_list(server: &mut State) {
-        // get name
-        let mut author = String::new();
-        print!("Who's list?: ");
-        std::io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut author).unwrap();
-        author = author.trim().to_string();
+    pub fn handle(server: &mut State) -> String { // returns `Username`
+                
+        let username: String =
+            get_input(Some(QUESTION::FindUser)).expect("Failed to read the input: USER"); //I'M GONNA LET YOU PANIC!
 
-        // get task
-        let task = todo::create(server, &author);
-        
-        // combine to make a list || make an instance && store it in State;
-        let created_list = User { name: author, list: vec![task] };
-        State::push_it(server, created_list)
-    }
+        /* 2 choices -- username_yes, username_no */
 
-    pub fn show_tasks(server: &State) {
-        // get user
-        print!("which user?: ");
-        std::io::stdout().flush().unwrap();
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-        input = input.trim().to_string();
-        
-        // get list
-        for i in &server.0 {
-            if i.name == input {
-                for j in &i.list {
-                    print!("{}. {} ", j.sno, j.task);
-                    if j.status == true {
-                        print!("✔️");
-                    }
-                    println!();
-                }
-            }
+
+        // username_yes
+        if server.0.iter().any(|user| &user.name == &username) {
+            return username;
         }
-        println!();
 
-        // let user = server.0.iter().filter(|x| x.name==input).next();
-        // // match user
-        // let response = server.0.iter().filter(|x| )
+        // username_no
+        server.create_newuser(User { // calling server function
+            name: username.clone(),
+            todo_count: 0,
+            todo: None,
+        });
+        return username;
 
     }
 
-    pub fn edit_status(server: &mut State) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn task(server: &mut State, user: &String) {
 
-        // get info 
-            // NAME
-            print!("which user?: ");
-            let mut user = String::new();
-            std::io::stdout().flush().unwrap();
-            std::io::stdin().read_line(&mut user).unwrap();
-            user = user.trim().to_string();
-
-            // TASK
-            print!("target no.?: ");
-            let mut sequence = String::new();
-            std::io::stdout().flush().unwrap();
-            std::io::stdin().read_line(&mut sequence).unwrap();
-            let serialnombar: u8 = sequence.trim().parse().expect("Failed to parse number");
-
-        // access & edit
-        for i in server.0.iter_mut() {
-            if i.name == user {
-                for j in i.list.iter_mut() {
-                    if j.sno == serialnombar {
-                        match j.get_status() {
-                            false => {
-                                println!("status is marked as undone, marking it as done...");
-                                j.toggling_status();
-                            },
-                            true => {
-                                println!("status is marked as done, marking it as undone...");
-                                j.toggling_status();
-                            }
-                        }
-                    } else {
-                        return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Serial No. INVALID 🤨")));
-                    }
-                }
-            } else {
-                return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Username INVALID 🤨")));
-            }
-        }
+        // getting task
+        let task: String = get_input(Some(QUESTION::FindTask)).expect("Failed to read the input: TASK");    
         
-        Ok(())
+        // calling server function
+        server.post_task(user, Task { title: task, status: false });
+        
+        // saving the state
+        save_state(&server);
 
     }
-
-    pub fn show_everything(server: &State) {
-        println!("all users:\n{:?}", server.0);
+ 
+    pub fn all(server: &State) {
+       
+        println!("all users:\n{:#?}", server.0);
+        
+        // Timeout: 3sec
+        time_out();
+        clear_terminal();
     }
 }
 
-/* how to get a task? search thru all_users for i in self.0 where i.name == required, then get the task */
+
+fn save_state(state: &State) {
+    
+    // serializing the data
+    let mut records: String = String::new();
+    match to_string_pretty(&state.0) {
+        Ok(val) => {
+            records = val;
+        },
+        Err(e) => {
+            log_error(&e, Some("Failed to serialize the data"));
+        }
+    };
+    
+    // writing the data to the file
+    match std::fs::OpenOptions::new().create(true).write(true).open("db.json") {
+        Ok(mut file) => {
+            match file.write_all(records.as_bytes()) {
+                Ok(_) => {},
+                Err(e) => {
+                    log_error(&e, Some("Failed to write to `db.json`"));
+                }
+            }
+        },
+        Err(e) => {
+            log_error(&e, Some("Failed to open `db.json`"));
+        }
+    }
+}
