@@ -1,14 +1,26 @@
 /* IMPORTS  */
 use serde::{Deserialize, Serialize};
 use crate::functions::{log_error, clear_terminal, get_input, time_out, QUESTION};
+use std::cell::RefCell;
 use std::io::{BufReader, Write};
 use std::error::Error;
 use serde_json::to_string_pretty;
 use std::option::Option::Some;
+use dialoguer::Select;
 
 
 /* STRUCTS */
-pub struct State(Vec<User>);
+pub struct State(Vec<User>); //RefCell will be used here to
+
+    /* 
+        DO NOTE: 
+            
+            1. `state.0` | `self.0` | `server.0` refers to the tuple of tuple struct.
+
+            2.  so essentially,
+                 `state.0` = `Vec<User>` (is refering to the vector of user associated data).
+    
+    */ 
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
@@ -28,115 +40,133 @@ struct Task {
 /* `IMPL` */
 impl State {
 
-    /* 
-        DO NOTE: 
-            
-            1. `server.0` | `self.0` | `state.0` refers to the tuple of tuple struct.
-
-            2.  so essentially,
-                 `self.0` = `Vec<User>` (is refering to the vector of user associated data).
-    
-    */ 
-
     fn initialize() -> Self {
-        Self(Vec::new())  //Instance created!
+            Self(Vec::new()) //creates a new instance
     }
 
-    fn create_newuser(&mut self, user: User) {
-
-        self.0.push(user)
+    fn register_newuser(&mut self, user: &User) -> &User {
+            self.0.push(*user);
+            &user
     }
 
-    fn post_task(&mut self, username: &str, task: Task) {
+    fn post_task(&mut self, userdata: RefCell<User>, task: Task) {
 
-        if let Some(user) = self.0.iter_mut().find(|user| user.name == username) {
+            let mut user = userdata.borrow_mut();
 
-            if let Some(todo) = &mut user.todo {
-                todo.push(task);
-            } else { // Handle the case where user.todo is None, e.g. by creating a new todo list
-                user.todo = Some(vec![task]); 
+            match &mut user.todo {
+                Some(mut todo) => todo.push(task),
+                None => user.todo = Some(vec![task]),
             }
 
             user.todo_count += 1;
-        }
-
     }
 
-    pub fn load_state(&mut self) { 
-        match deserialize_it() {
-            Ok(data) => {
-                self.0 = data;
-            },
-            Err(e) => {
-                if let Some(json_err) = e.downcast_ref::<serde_json::Error>() {
-                    if let serde_json::error::Category::Eof = json_err.classify() {
-                        // Handle EOF error here
-                        println!("No Previous State Found!");
-                    } else {
-                        log_error(&*e, Some("Failed to Load the `state`"));
-                    }
+    fn load_state(&mut self) { 
+
+        //first we open the 'saved data' file to check if it's empty (newly created)?
+            //if yes
+                //we do nothing
+            //else
+                //we load the state
+
+
+        let file = std::fs::OpenOptions::new().create(true).append(true).read(true).open("db.json").expect("Failed to access the `state`"); //I want the program to crash here because if `db.json` is not created (when not present) then there will be no 'state preservation', the program will be of no use. However, this is very unlikely to happen & probably because of permission issues. I'll cover how to resolve this in documentation. I cannot cover it here because there is nothing I can do to get permission, this solely lies on user's end.
+        
+        match check_file("db.json") {
+            Ok(true) => {},
+            Ok(false) => {
+                let reader = BufReader::new(file);
+                match serde_json::from_reader(reader) {
+                    Ok(data) => self.0 = data,
+                    Err(e) => {
+                        log_error(&e, Some("Saved Data Corrupted!"));
+                    },
                 }
             },
-        } 
+            Err(e) => log_error(&*e, Some("Failed to Check the `state`")),
+        }
+
     } 
     
 
 }
 
-/* `State` performs all the actions as it's its instance that's holding everything */
-/* `User` is merely just an abraction layer */
-
 
 impl User {
-    pub fn start() -> State {
-        State::initialize() // Creating a `Global` instance of `State`.
-        // let server = &mut State::initialize(); // Creating a `Global` instance of `State`.
-        // server.load_state();
+
+    pub fn welcome() -> State {
+
+        //checks if an existing `state` exists
+            // if yes
+                //loads the state
+            // else 
+                //returns an instance
+        
+        let mut state = State::initialize();
+        state.load_state();
+        return state;
+        
     }
 
-    pub fn handle(server: &mut State) -> String { // returns `Username`
-                
-        let username: String =
-            get_input(Some(QUESTION::GetUser)).expect("Failed to read the input: USER"); //I'M GONNA LET YOU PANIC!
+    pub fn handle(server: &mut State) -> &User { // returns `Username`
+
+        // shows all logged in users
+            //choose between them using arrow keys
+                //chose: existing account
+                    // password validation
+                //chose: create a new account
+                    //creates a new account
+                    // restarts the program
+
             
-        match server.0.iter().any(|user| &user.name == &username) {
-            true => {
-                println!("Welcome Back!");
-                let key: String = get_input(Some(QUESTION::GetPassword)).expect("Failed to read the input: PASS");
-                if let Some(user) = server.0.iter().find(|user| &user.name == &username && &user.pass == &key) {
-                    println!("Welcome Back!");
-                    return user.name.clone();
-                }
-                return username;
-            },
-            false => {
+            let mut all_users = server.0.iter().map(|user| &user.name).collect::<Vec<&String>>();
+            
+            let new_option = String::from("Create a new User");
+            all_users.push(&new_option);
+
+            
+
+            let selected_index = Select::new()
+            .with_prompt("Choose a user")
+            .items(&all_users)
+            .default(0)
+            .interact()
+            .unwrap();
+
+        let selected_option: &String = all_users[selected_index];
+        let selected_option: String = selected_option.to_owned();
+
+        if  selected_option == "String" {
+                let username: String = get_input(Some(QUESTION::GetUser)).expect("Failed to read the input: USER"); //I'M GONNA LET YOU PANIC!
+
                 println!("Creating New User...");
                 let key = get_input(Some(QUESTION::GetPassword)).expect("Failed to read the input: PASS");
-                server.create_newuser(User { // calling server function
+                server.register_newuser(&User { // register user and returns it as well
                     name: username.clone(),
                     pass: key,
                     todo_count: 0,
                     todo: None,
-                });
-                return username;        
-            },
+                })      
+        } else {
+                //login
+                let key: String = get_input(Some(QUESTION::GetPassword)).expect("Failed to read the input: PASS");
+                let user = server.0.iter().find(|user| &user.name == &selected_option && &user.pass == &key).unwrap(); //there is no chance of error.
+                println!("Welcome Back!");
+                return &user;
+        }
     }
-    }
+    
 
+    pub fn task(server: &mut State, userdata: &User) {
 
-    pub fn task(server: &mut State, user: &String) {
+        let mut user  = RefCell::new(*userdata);
+
 
         // getting task
         let task: String = get_input(Some(QUESTION::GetTask)).expect("Failed to read the input: TASK");    
         
         // calling server function
         server.post_task(user, Task { title: task, status: false });
-        
-        // saving the state
-        match save_state(&server) {
-            Ok(_) => {},
-            Err(e) => log_error(&*e, Some("Failed to Save the `state`")),
-        }
 
     }
  
@@ -145,6 +175,16 @@ impl User {
         time_out(); //3s
         clear_terminal();
     }
+
+    pub fn close(server: &State) {
+        clear_terminal();
+        // saving the state
+        match save_state(&server) {
+            Ok(_) => {},
+            Err(e) => log_error(&*e, Some("Failed to Save the `state`")),
+        }
+    }
+
 }
 
 /* WRAPPER FUNCTIONS */
@@ -157,11 +197,10 @@ fn save_state(state: &State) -> Result<(), Box<dyn Error>> {
     
 }
 
-fn deserialize_it() -> Result<Vec<User>, Box<dyn Error>> {
-
-    let file = std::fs::OpenOptions::new().create(true).append(true).read(true).open("db.json")?;
-    let reader = BufReader::new(file);
-    let data: Vec<User> = serde_json::from_reader(reader)?;
-
-    Ok(data)
+fn check_file(file: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    if std::fs::metadata(file)?.len() == 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }

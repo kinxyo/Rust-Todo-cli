@@ -56,5 +56,49 @@ There are 2 main structs in this code: `State` and `User`.
 
 ```
 
+What I asked:
+> In order to create my own state management system in Rust, I have created two structs -- `State` & `User`. I have also created their respective functions. I create their instance in the beginning of the program and pass their mutable reference onto their respective functions throughout the program. I also preserve the state(data) in a `.json` file, and retrieve it when the user wants to continue their session. Is this the right approach?
+
+What _bing_ replied:
+> Your approach of creating two structs, state and user, and their respective functions, and then passing their mutable reference throughout the program is a good way to manage state in Rust.
+> Preserving the state data in a .json file and retrieving it when the user wants to continue their session is also a good way to persist the state data between sessions.
+
+What _github copilot_ replied:
+> Yes, if you want to modify `state` or `user` within the `User::task` or `User::all` methods, you would need to pass mutable references to these methods.
+
+## `RefCell` Example
+
+```rust
+use std::cell::RefCell;
+
+struct MyStruct {
+    value: RefCell<i32>,
+}
+
+impl MyStruct {
+    fn new(value: i32) -> MyStruct { //ill have to change my create user code and struct field
+        MyStruct {
+            value: RefCell::new(value),
+        }
+    }
+
+    fn increment(&self) {
+        let mut value = self.value.borrow_mut();
+        *value += 1;
+    }
+
+    fn get_value(&self) -> i32 {
+        *self.value.borrow()
+    }
+}
+
+fn main() {
+    let my_struct = MyStruct::new(42);
+    my_struct.increment();
+    println!("Value: {}", my_struct.get_value());
+}
+```
+
+------------
 > [!IMPORTANT]
 > Work In Progress.
