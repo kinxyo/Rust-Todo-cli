@@ -16,7 +16,7 @@ fn main() {
         let state = &mut User::welcome();
 
         // get user handle (be it existing or new)
-        let  user: &User = User::handle(state);
+        let user = User::handle(state);
         
         // refresh the terminal and post instructions
         clear_terminal(); println!("( Add Task: \"post\" | Show Records: \"all\" | exit )");

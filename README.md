@@ -1,6 +1,18 @@
 # Rust Todo-cli
 
-A feature-full Rust-based Todo app that installs and runs on cli because I just want to write my own state management system from scratch.
+~~A feature-full Rust-based Todo app that installs and runs on cli because I just want to write my own state management system from scratch.~~
+
+Initial motivation was to create my own state management system, however now I'm writting all backend the operations from scratch.
+
+**Checklist**:
+
+- [ ] State Management System.
+- [ ] Logging Crashes and Communicating it.
+- [ ] Interactive Terminal tooling.
+- [ ] Authentication System from scratch.
+- [ ] Middleware.
+- [ ] Testing.
+- [ ] Auto-compltetion for "recently used commands" via Caching.
 
 ![image](https://github.com/kinxyo/Rust-Todo-cli/assets/90744941/e8a9b0ca-2059-4315-b510-7c939620df13)
 
@@ -10,9 +22,10 @@ A feature-full Rust-based Todo app that installs and runs on cli because I just 
 - [x] Error log
 - [x] Persistance of state
 - [x] Panic if unable to create or load `(db + error).json`.
+- [ ] Update Support for `Rc` (improve memory management).
 - [ ] Show Users on Welcome Page (if any)
 - [ ] Add full-fledged Authentication System.
-- [ ] Add support for selecting items using arrow key
+- [x] Add support for selectingx items using arrow key (Interactive Terminal).
 - [ ] Update to proper Argument Parser.
 - [ ] Updating Error log to Server (at exit command perhaps).
 - [ ] `Remove User` Functionality
@@ -27,6 +40,11 @@ There are 2 main structs in this code: `State` and `User`.
 - `State` can also be conversely called as "_server_" as it performs **all** the backend functions. This is because it's its instance that's holding everything (all the data).
 
 - `User` is merely just an abstraction layer. The `main` function only interacts with `User` struct as it acts like an **API** to all the backend functions.
+
+------------
+
+> [!Note]
+> I'm currently saving all these 👇 for reference's sake, will obviously delete it later.
 
 ```rust
 // Post This In Readme.md ⬇️
@@ -98,6 +116,40 @@ fn main() {
     println!("Value: {}", my_struct.get_value());
 }
 ```
+
+------------
+**_me_**:
+> Am I running to all these problems because I'm not using `RefCell` with `Rc`?
+
+**_copilot_**:
+> Yes, that could be the case. In Rust, `RefCell<T>` is often used with `Rc<T>` when you need multiple owners and also need to mutate the value.
+
+`Rc<T>` stands for 'Reference Counted' and allows multiple owners of the same data. It ensures that the data remains available as long as there is at least one owner. When the last `Rc<T>` is dropped, the data is cleaned up.
+
+`RefCell<T>` on the other hand, provides interior mutability. It allows you to mutate the data it holds, even when there are immutable references to that data.
+
+When you use `Rc<RefCell<T>>`, you get a type that can have multiple owners and can be mutated. This is often necessary when you're building complex data structures where elements need to own each other or mutate each other.
+
+In your case, if `server.0` is a `Vec<RefCell<User>>` and you need to mutate the `Users` or have multiple owners of the same `User`, you might need to change it to a `Vec<Rc<RefCell<User>>>`.
+
+Here's how you can modify your code to use `Rc<RefCell<User>>`:
+
+```rust
+use std::rc::Rc;
+use std::cell::RefCell;
+
+// Change server.0 to a Vec<Rc<RefCell<User>>>
+let server: Vec<Rc<RefCell<User>>> = Vec::new();
+
+// Now you can clone the Rc<RefCell<User>> to get a new owner
+let user = Rc::new(RefCell::new(User::new()));
+server.push(Rc::clone(&user));
+
+// And you can still mutate the User
+user.borrow_mut().name = String::from("New name");
+```
+
+In this code, `Rc::clone(&user)` creates a new `Rc<RefCell<User>>` that points to the same `User`. You can push this to `server` to get multiple owners of the same `User`. And `user.borrow_mut().name = String::from("New name");` mutates the `User` through the `RefCell`.
 
 ------------
 > [!IMPORTANT]
