@@ -9,21 +9,22 @@ pub fn time_out() {
 }
 
 pub enum QUESTION {
-    FindUser,
-    FindTask,
+    GetUser,
+    GetTask,
+    GetPassword,
 }
 
 
 pub fn get_input<T: std::str::FromStr>(askf: Option<QUESTION>) -> Result<T, Box<dyn std::error::Error>> { // askf = "asking for?"
 
     match askf {
-        Some(QUESTION::FindUser) => {
+        Some(QUESTION::GetUser) => {
             
             println!("USERNAME:");
             return take_input();
         
         },
-        Some(QUESTION::FindTask) => {
+        Some(QUESTION::GetTask) => {
             
             println!("\n[ENTER TASK]:");
             let t = take_input();
@@ -31,6 +32,12 @@ pub fn get_input<T: std::str::FromStr>(askf: Option<QUESTION>) -> Result<T, Box<
             
             println!("Task Added!");
             return t;
+        },
+        Some(QUESTION::GetPassword) => {
+            
+            println!("PASSWORD:");
+            return take_input();
+        
         },
         None => {
             println!("\n[COMMAND]:");

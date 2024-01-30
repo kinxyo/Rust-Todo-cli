@@ -2,7 +2,7 @@ mod todo;
 use crate::todo::User;
 
 mod functions;
-use crate::functions::{clear_terminal, get_input};
+use crate::functions::{clear_terminal, get_input}; //need to unimport it later
 
 /* create a error.txt log and update errors to it whenever they occur. Also once you get that working, add a functionality where the error files are uploaded to you on some server, so we can read those errors and fix the codebase. */
 
