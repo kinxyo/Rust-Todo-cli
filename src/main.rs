@@ -8,7 +8,7 @@ use crate::functions::{clear_terminal, get_input};
 
 fn main() {
     
-    clear_terminal(); //don't comment this out until production.
+    // clear_terminal(); //don't comment this out until production.
     
 
     let state = &mut User::start();
@@ -37,18 +37,3 @@ fn main() {
         }
     }   
 }
-
-/*
-    LETTING SOME ERRORS PANIC BECAUSE HANDLING THEM IS OVERKILL.
-     For past 2 hours, I've been obsessively searching all the functions 
-     that return a `result` so I can use `match` on them. 
-     However, I feel as though that there are some errors that are never going to happen under normal circumstances,
-     and even if they do, I don't really know how I will keep the programing running. 
-     I want the program to crash in such extremely rare cases.
-
-    (asking copilot because I have nobody else to ask to)
-        > Yes, in this specific case where your application is a CLI todo-list app and the input is always a string,
-        it might be acceptable to let the program panic if it fails to read the input.
-        As you've mentioned, there's not much you can do to recover from this error, 
-        and it's unlikely to occur under normal circumstances.
-*/

@@ -1,8 +1,9 @@
 /* IMPORTS  */
 use serde::{Deserialize, Serialize};
 use crate::functions::{log_error, clear_terminal, get_input, time_out, QUESTION};
-use std::io::{Write, Read};
-use serde_json::{to_string_pretty, from_str};
+use std::io::{BufReader, Write};
+use std::error::Error;
+use serde_json::to_string_pretty;
 use std::option::Option::Some;
 
 
@@ -42,8 +43,6 @@ impl State {
 
     fn create_newuser(&mut self, user: User) {
 
-
-        
         self.0.push(user)
     }
 
@@ -52,13 +51,9 @@ impl State {
         if let Some(user) = self.0.iter_mut().find(|user| user.name == username) {
 
             if let Some(todo) = &mut user.todo {
-
                 todo.push(task);
-            
-            } else {
-                
-                // Handle the case where user.todo is None, e.g. by creating a new todo list
-                user.todo = Some(vec![task]);
+            } else { // Handle the case where user.todo is None, e.g. by creating a new todo list
+                user.todo = Some(vec![task]); 
             }
 
             user.todo_count += 1;
@@ -67,33 +62,22 @@ impl State {
     }
 
     pub fn load_state(&mut self) { 
-
-        // let status: bool;
-
-        // fetching `state` from local file.
-        let file = std::fs::File::open("db.json");
-        match file {
-            Ok(mut file) => {
-                
-                // loading the state        
-                let mut data = String::new();
-                
-                match file.read_to_string(&mut data) {
-                    Ok(_) => (),
-                    Err(e) => log_error(&e, Some("Failed to read from db.json")),
-                }
-                
-                match from_str(&data) {
-                    Ok(val) => {
-                        self.0 = val;
-                    },
-                    Err(e) => log_error(&e, Some("Failed to deserialize the data")),
+        match deserialize_it() {
+            Ok(data) => {
+                self.0 = data;
+            },
+            Err(e) => {
+                if let Some(json_err) = e.downcast_ref::<serde_json::Error>() {
+                    if let serde_json::error::Category::Eof = json_err.classify() {
+                        // Handle EOF error here
+                        println!("No Previous State Found!");
+                    } else {
+                        log_error(&*e, Some("Failed to Load the `state`"));
+                    }
                 }
             },
-            Err(e) => log_error(&e, Some("Failed to open the file")),
-        }
-    
-    }
+        } 
+    } 
     
 
 }
@@ -114,8 +98,8 @@ impl User {
         let username: String =
             get_input(Some(QUESTION::FindUser)).expect("Failed to read the input: USER"); //I'M GONNA LET YOU PANIC!
 
+        
         /* 2 choices -- username_yes, username_no */
-
 
         // username_yes
         if server.0.iter().any(|user| &user.name == &username) {
@@ -141,7 +125,10 @@ impl User {
         server.post_task(user, Task { title: task, status: false });
         
         // saving the state
-        save_state(&server);
+        match save_state(&server) {
+            Ok(_) => {},
+            Err(e) => log_error(&*e, Some("Failed to Save the `state`")),
+        }
 
     }
  
@@ -155,32 +142,46 @@ impl User {
     }
 }
 
+/* State Functions */
+fn save_state(state: &State) -> Result<(), Box<dyn Error>> {
 
-fn save_state(state: &State) {
+    let records = to_string_pretty(&state.0)?;
+    let mut file = std::fs::OpenOptions::new().create(true).write(true).open("db.json")?;
+    file.write_all(records.as_bytes())?;
+    Ok(())
     
-    // serializing the data
-    let mut records: String = String::new();
-    match to_string_pretty(&state.0) {
-        Ok(val) => {
-            records = val;
-        },
-        Err(e) => {
-            log_error(&e, Some("Failed to serialize the data"));
-        }
-    };
-    
-    // writing the data to the file
-    match std::fs::OpenOptions::new().create(true).write(true).open("db.json") {
-        Ok(mut file) => {
-            match file.write_all(records.as_bytes()) {
-                Ok(_) => {},
-                Err(e) => {
-                    log_error(&e, Some("Failed to write to `db.json`"));
-                }
-            }
-        },
-        Err(e) => {
-            log_error(&e, Some("Failed to open `db.json`"));
-        }
-    }
+}
+
+// Post This In Readme.md ⬇️
+
+/*
+    LETTING SOME ERRORS PANIC BECAUSE HANDLING THEM IS OVERKILL.
+     For past 2 hours, I've been obsessively searching all the functions 
+     that return a `result` so I can use `match` on them. 
+     However, I feel as though that there are some errors that are never going to happen under normal circumstances,
+     and even if they do, I don't really know how I will keep the programing running. 
+     I want the program to crash in such extremely rare cases.
+
+    (asking copilot because I have nobody else to ask to)
+        > Yes, in this specific case where your application is a CLI todo-list app and the input is always a string,
+        it might be acceptable to let the program panic if it fails to read the input.
+        As you've mentioned, there's not much you can do to recover from this error, 
+        and it's unlikely to occur under normal circumstances.
+*/
+
+/* Wrapper functions: 
+    In code there are a lot of methods return a `Result`. 
+    I can not go and individually apply `match` case to them (achulli, I did just that but it made code very ugly)
+    Hence, I use `?` operator on them,
+    and then I wrap them in a function that returns `Result` and then I apply `match` case on that function.
+    This way, I can keep the code clean and also handle the errors.
+*/
+
+fn deserialize_it() -> Result<Vec<User>, Box<dyn Error>> {
+
+    let file = std::fs::OpenOptions::new().create(true).append(true).read(true).open("db.json")?;
+    let reader = BufReader::new(file);
+    let data: Vec<User> = serde_json::from_reader(reader)?;
+
+    Ok(data)
 }

@@ -6,13 +6,15 @@ A feature-full Rust-based Todo app that installs and runs on cli because I just 
 
 ## TODO
 
+**I'm basically implementing all backend operations from scratch in `Rust`** "_But Why?_" 😶.
+
 - [x] Refactor Code
 - [x] Error log
-- [x] Error Handling for all cases
-- [x] Persistance of state, meaning saving it to a file or a database.
+- [x] Persistance of state
 - [ ] Show Users on Welcome Page (if any)
+- [ ] Add full-fledged Authentication System.
 - [ ] Add support for selecting items using arrow key
-- [ ] Add Argument Parser.
+- [ ] Update to proper Argument Parser.
 - [ ] Updating Error log to Server (at exit command perhaps).
 - [ ] `Remove User` Functionality
 - [ ] `Delete a Task` Functionality
