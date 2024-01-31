@@ -32,7 +32,7 @@ fn main() {
                     break;
                 },
                 "post" => User::task(state, &user),
-                "all" => User::all(state),
+                "view" => User::view(state, &user), //get a glance of the user's todo list
                 // add more cases of username signout and login etc.
                 _ => {}
             }

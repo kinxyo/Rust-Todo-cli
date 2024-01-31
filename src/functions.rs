@@ -77,3 +77,11 @@ pub fn log_error(caught_error: &dyn std::error::Error, context: Option<&str>) {
             .expect("Failed to open the `error log`");
         writeln!(file, "{}", error_message).expect("Error Log Failed: You were supposed to stop them not join them!");
 }
+
+pub fn check_file(file: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    if std::fs::metadata(file)?.len() == 0 {
+        Ok(false)
+    } else {
+        Ok(true)
+    }
+}
