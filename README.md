@@ -2,7 +2,7 @@
 
 ~~A simple todo app written in Rust because I just wanted to write my own state management system from scratch.~~
 
-Initial motivation was to create a simple todo list but then out of nowhere, I was inspired to add more features to make it a full fledged CLI app.
+Initial motivation was to create a simple todo list but then out of nowhere, I was inspired to add more features to make it a full-fledged interactive CLI app.
 
 ## ¿ Why `Rust🦀` ?
 
