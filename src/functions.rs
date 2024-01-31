@@ -28,7 +28,7 @@ pub fn get_input<T: std::str::FromStr>(askf: Option<QUESTION>) -> Result<T, Box<
             
             println!("\n[ENTER TASK]:");
             let t = take_input();
-            clear_terminal();
+            // clear_terminal();
             
             println!("Task Added!");
             return t;
