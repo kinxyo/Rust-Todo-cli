@@ -15,7 +15,7 @@ Because I love this crab language.
 
 There are 3 files in the codebase:-
 
-### 1. _Todo.rs_
+### 1. <ins>_todo.rs_</ins>
 
 This file incorporates all the primary backend functions.
 
@@ -70,11 +70,11 @@ That's a valid concer, hence, to not let any crash go in vain, I have implemente
 
 Althought this project is not so serious that this will be actually needed but I just wanted to implement this feature to learn how to do it.
 
-### 2. _functions.rs_
+### 2. <ins>_functions.rs_</ins>
 
 There were some methods that were called being multiple times in multiple files but with some sort of tweaking going-on, so I wrapped them in functions to streamline the process.
 
-### 3. _main.rs_
+### 3. <ins>_main.rs_</ins>
 
 Entry point of the program where all code converges. That might have been a poetic description but it conveys its essence, and that's all there is to it.
 
