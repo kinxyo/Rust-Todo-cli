@@ -13,6 +13,19 @@ KANBAN board sorta GUI app.
 
 Because I love this crab language.
 
+# NEW IDEA TO WORK ON 💡
+
+   apparently I couldn't work on the project anymore as it wasn't interesting. I really lost the meaning of doing it.
+
+   However, I do have a new idea that has reignited my passion.
+
+   Problem: I NEED a good task manager. I use obsidian kanban usually to tackle my stuff but then there are these whole small task for which I have to create an additional todolist. I often take breaks so when I come back, there's a chance I'm missing something. Also, I hate to leave the keyboard when I'm working so I want a software solution to this. Recreating new boards or tasklist is hectic + I usually operate them in new window so I don't mix them with my notes then there's this whole fiascal of managing multiple windows. It's a very messy workflow overall.
+
+   Solution: A simple task manager that switches between long-term and short goals. long-term being kanban board and short goals is a todolist. fast, lightweight and has the ability to be pinned.
+
+   > [!NOTE]
+   > anything below is meaningless now.
+
 ## System Design
 
 There are 3 files in the codebase:-
