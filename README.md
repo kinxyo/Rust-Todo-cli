@@ -5,11 +5,7 @@
 
 ~~A simple todo app written in Rust because I just wanted to write my own state management system from scratch.~~
 
-~~Initial motivation was to create a simple todo list but then, out of nowhere, I was inspired to add more features to make it a full-fledged interactive CLI app.~~
-
-> ¿Why Always `Rust🦀`?
-
-Because I love this crab language.
+Initial motivation was to create a simple todo list but then, out of nowhere, I was inspired to add more features to make it a full-fledged interactive CLI app.
 
 ## System Design
 
@@ -105,3 +101,9 @@ Entry point of the program where all code converges. That might have been a poet
 - [ ] `Remove User` Functionality
 - [ ] `Delete a Task` Functionality
 - [ ] **Styling**
+
+---
+
+> ¿Why Always `Rust🦀`?
+
+Because I love this crab language.
